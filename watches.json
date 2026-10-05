@@ -1,0 +1,30 @@
+{
+  "_how_to": "One hunt per entry. id: short unique name. query: what to search. city: FB Marketplace city slug (test the URL in your browser first). max_price: you only get alerted for listings at or below this (USD). category: electronics | furniture | instruments | other (cars/houses need extra caution). results_cap: max listings this watch may fetch per daily scan (keep small — shared budget!). Delete the _starter entries when you add real ones.",
+  "_starter_note": "These 3 examples are live — replace or delete them.",
+  "watches": [
+    {
+      "id": "iphone12-miami",
+      "query": "iphone 12",
+      "city": "miami",
+      "max_price": 280,
+      "category": "electronics",
+      "results_cap": 12
+    },
+    {
+      "id": "treadmill-miami",
+      "query": "treadmill",
+      "city": "miami",
+      "max_price": 150,
+      "category": "furniture",
+      "results_cap": 8
+    },
+    {
+      "id": "gamingpc-orlando",
+      "query": "gaming pc",
+      "city": "orlando",
+      "max_price": 500,
+      "category": "electronics",
+      "results_cap": 8
+    }
+  ]
+}
