@@ -1,0 +1,12 @@
+{
+  "_about": "Engine-owned memory. Committed back after every run. Never hand-edit except full reset: paste this original skeleton to start clean.",
+  "version": 1,
+  "tg_offset": 0,
+  "last_discovery_date": null,
+  "usage": {
+    "month": null,
+    "fetched": 0
+  },
+  "seen": {},
+  "deals": {}
+}
