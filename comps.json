@@ -1,0 +1,27 @@
+{
+  "_how_to": "Key each entry by the watch id from watches.json (must match EXACTLY). Log 3-5 real prices per watch: sold prices beat asking prices. source: ebay_sold | local_sold | marketplace_asking. date: YYYY-MM-DD. condition: new | like_new | good | fair. The engine uses the LOWEST good comp as the conservative resale base, and warns you if any comp is older than 30 days. Refresh monthly — stale comps = fake spreads. The _starter entries below are EXAMPLES with made-up-ish numbers: replace them with real ones before you trust any card.",
+  "_starter_note": "EXAMPLE DATA — swap for real prices you verify yourself.",
+  "comps": {
+    "iphone12-miami": {
+      "comps": [
+        {"price": 330, "source": "ebay_sold", "date": "2026-05-20", "condition": "good", "note": "128GB, unlocked, sold listing"},
+        {"price": 355, "source": "ebay_sold", "date": "2026-05-18", "condition": "like_new", "note": "128GB, clean IMEI"},
+        {"price": 300, "source": "local_sold", "date": "2026-05-15", "condition": "good", "note": "face-to-face sale, minor wear"}
+      ]
+    },
+    "treadmill-miami": {
+      "comps": [
+        {"price": 220, "source": "marketplace_asking", "date": "2026-05-19", "condition": "good", "note": "NordicTrack, local pickup"},
+        {"price": 180, "source": "local_sold", "date": "2026-05-12", "condition": "good", "note": "older model, sold in 2 days"},
+        {"price": 250, "source": "marketplace_asking", "date": "2026-05-21", "condition": "like_new", "note": "ProForm, barely used"}
+      ]
+    },
+    "gamingpc-orlando": {
+      "comps": [
+        {"price": 650, "source": "ebay_sold", "date": "2026-05-17", "condition": "good", "note": "RTX 3060 / i5-12400F / 16GB"},
+        {"price": 720, "source": "ebay_sold", "date": "2026-05-14", "condition": "like_new", "note": "RTX 3060 Ti build, RGB"},
+        {"price": 600, "source": "local_sold", "date": "2026-05-09", "condition": "fair", "note": "no GPU box, dust inside"}
+      ]
+    }
+  }
+}
