@@ -1,7 +1,7 @@
 {
  "_about": "Engine-owned memory. Committed back after every run. Never hand-edit except full reset: paste this original skeleton to start clean.",
  "version": 1,
- "tg_offset": 275565127,
+ "tg_offset": 275565129,
  "last_discovery_date": "2026-10-05",
  "usage": {
   "month": "2026-10",
