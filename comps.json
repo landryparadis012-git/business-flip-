@@ -1,26 +1,96 @@
 {
-  "_how_to": "Key each entry by the watch id from watches.json (must match EXACTLY). Log 3-5 real prices per watch: sold prices beat asking prices. source: ebay_sold | local_sold | marketplace_asking. date: YYYY-MM-DD. condition: new | like_new | good | fair. The engine uses the LOWEST good comp as the conservative resale base, and warns you if any comp is older than 30 days. Refresh monthly — stale comps = fake spreads. The _starter entries below are EXAMPLES with made-up-ish numbers: replace them with real ones before you trust any card.",
-  "_starter_note": "EXAMPLE DATA — swap for real prices you verify yourself.",
+  "_how_to": "Real researched comps (Swappa/BackMarket/Craigslist/Walmart, Oct 2026). Only ~3 watches may be ACTIVE at once (budget). To activate a hunt, tell OpsHub the exact watch phrase listed in _watches below — the id it creates matches the key here. Refresh a key's top comp monthly via swappa.com/prices pages. Items marked 'asking' are new-item retail prices — weak comps, deprioritized.",
+  "_watches": "Activate by telling OpsHub EXACTLY: 'watch playstation 5 under 450 in miami' / 'watch macbook air m1 under 350 in miami' / 'watch xbox series x under 500 in miami' / 'watch ipad 9th gen under 150 in miami' / 'watch gopro under 100 in miami' / 'watch gaming chair under 250 in miami' / 'watch thinkpad under 180 in miami' / 'watch standing desk under 100 in miami' / 'watch playstation 4 pro under 230 in miami' / 'watch xbox series s under 300 in miami' / 'watch sony a6000 under 280 in miami' / 'watch sofa under 280 in miami'",
   "comps": {
-    "iphone12-miami": {
+    "used-iphone-miami": {
       "comps": [
-        {"price": 330, "source": "ebay_sold", "date": "2026-05-20", "condition": "good", "note": "128GB, unlocked, sold listing"},
-        {"price": 355, "source": "ebay_sold", "date": "2026-05-18", "condition": "like_new", "note": "128GB, clean IMEI"},
-        {"price": 300, "source": "local_sold", "date": "2026-05-15", "condition": "good", "note": "face-to-face sale, minor wear"}
+        {"price": 177, "source": "swappa_sold", "date": "2026-10-05", "condition": "good", "note": "Swappa avg SALE, 128GB"},
+        {"price": 256, "source": "backmarket_good", "date": "2026-10-01", "condition": "good", "note": "Back Market Good, 128GB"},
+        {"price": 252, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "Swappa avg listing, 128GB"}
       ]
     },
-    "treadmill-miami": {
+    "playstation-5-miami": {
       "comps": [
-        {"price": 220, "source": "marketplace_asking", "date": "2026-05-19", "condition": "good", "note": "NordicTrack, local pickup"},
-        {"price": 180, "source": "local_sold", "date": "2026-05-12", "condition": "good", "note": "older model, sold in 2 days"},
-        {"price": 250, "source": "marketplace_asking", "date": "2026-05-21", "condition": "like_new", "note": "ProForm, barely used"}
+        {"price": 466, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "PS5 disc, 825GB, w/ controller"},
+        {"price": 469, "source": "swappa_asking", "date": "2026-10-05", "condition": "fair", "note": "PS5 disc, original model"},
+        {"price": 478, "source": "swappa_asking", "date": "2026-10-05", "condition": "like_new", "note": "PS5 disc mint, 2 controllers"}
       ]
     },
-    "gamingpc-orlando": {
+    "playstation-4-pro-miami": {
       "comps": [
-        {"price": 650, "source": "ebay_sold", "date": "2026-05-17", "condition": "good", "note": "RTX 3060 / i5-12400F / 16GB"},
-        {"price": 720, "source": "ebay_sold", "date": "2026-05-14", "condition": "like_new", "note": "RTX 3060 Ti build, RGB"},
-        {"price": 600, "source": "local_sold", "date": "2026-05-09", "condition": "fair", "note": "no GPU box, dust inside"}
+        {"price": 258, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "1TB Glacier White"},
+        {"price": 335, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "1TB + 2 controllers + games"},
+        {"price": 258, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "dup anchor — market floor"}
+      ]
+    },
+    "xbox-series-x-miami": {
+      "comps": [
+        {"price": 515, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "1TB standard"},
+        {"price": 541, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "1TB + original controller"},
+        {"price": 557, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "1TB standard"}
+      ]
+    },
+    "xbox-series-s-miami": {
+      "comps": [
+        {"price": 315, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "512GB"},
+        {"price": 335, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "512GB white"},
+        {"price": 350, "source": "swappa_asking", "date": "2026-10-05", "condition": "like_new", "note": "512GB white mint"}
+      ]
+    },
+    "macbook-air-m1-miami": {
+      "comps": [
+        {"price": 384, "source": "swappa_sold", "date": "2026-10-05", "condition": "good", "note": "avg SALE, M1 128GB"},
+        {"price": 385, "source": "swappa_sold", "date": "2026-10-05", "condition": "good", "note": "avg SALE, M1 256GB"},
+        {"price": 461, "source": "swappa_sold", "date": "2026-10-05", "condition": "good", "note": "avg SALE, M1 512GB"}
+      ]
+    },
+    "thinkpad-miami": {
+      "comps": [
+        {"price": 204, "source": "swappa_sold", "date": "2026-10-05", "condition": "good", "note": "T480 i5/256GB avg sale"},
+        {"price": 278, "source": "swappa_sold", "date": "2026-10-05", "condition": "good", "note": "T14 i5/512GB avg sale"},
+        {"price": 360, "source": "swappa_sold", "date": "2026-10-05", "condition": "good", "note": "T14 i7/512GB avg sale"}
+      ]
+    },
+    "ipad-9th-gen-miami": {
+      "comps": [
+        {"price": 167, "source": "swappa_sold", "date": "2026-10-05", "condition": "good", "note": "Wi-Fi 64GB avg sale"},
+        {"price": 184, "source": "swappa_asking", "date": "2026-10-05", "condition": "good", "note": "64GB avg listing"},
+        {"price": 217, "source": "swappa_sold", "date": "2026-10-05", "condition": "good", "note": "256GB avg sale"}
+      ]
+    },
+    "gopro-miami": {
+      "comps": [
+        {"price": 120, "source": "swappa_sold", "date": "2026-01-26", "condition": "like_new", "note": "HERO9 mint, 2 batteries — AGING, refresh before trusting"},
+        {"price": 123, "source": "swappa_sold", "date": "2026-05-02", "condition": "good", "note": "HERO10 + accessories"},
+        {"price": 201, "source": "swappa_asking", "date": "2026-10-05", "condition": "like_new", "note": "HERO9 asking, accessory kit"}
+      ]
+    },
+    "sony-a6000-miami": {
+      "comps": [
+        {"price": 330, "source": "swappa_sold", "date": "2026-02-12", "condition": "good", "note": "a6000 body only — AGING, refresh"},
+        {"price": 361, "source": "swappa_asking", "date": "2026-08-12", "condition": "good", "note": "a6000 body + 2 batteries"},
+        {"price": 721, "source": "swappa_asking", "date": "2026-09-19", "condition": "good", "note": "a6400 body — different model, ceiling only"}
+      ]
+    },
+    "gaming-chair-miami": {
+      "comps": [
+        {"price": 250, "source": "craigslist_asking", "date": "2026-09-26", "condition": "good", "note": "Secretlab Titan Evo, no armrests"},
+        {"price": 400, "source": "craigslist_asking", "date": "2026-09-25", "condition": "like_new", "note": "Secretlab Titan Evo full"},
+        {"price": 250, "source": "craigslist_asking", "date": "2026-09-26", "condition": "good", "note": "market floor anchor"}
+      ]
+    },
+    "standing-desk-miami": {
+      "comps": [
+        {"price": 65, "source": "craigslist_asking", "date": "2026-10-01", "condition": "like_new", "note": "FlexiSpot 48x24 electric"},
+        {"price": 125, "source": "fbm_asking", "date": "2026-07-24", "condition": "like_new", "note": "FlexiSpot EN1"},
+        {"price": 125, "source": "craigslist_asking", "date": "2026-09-14", "condition": "like_new", "note": "FlexiSpot electric"}
+      ]
+    },
+    "sofa-miami": {
+      "comps": [
+        {"price": 90, "source": "craigslist_asking", "date": "2026-10-01", "condition": "fair", "note": "basic loveseat — floor"},
+        {"price": 350, "source": "craigslist_asking", "date": "2026-09-24", "condition": "good", "note": "2-seat gray, wear"},
+        {"price": 1000, "source": "craigslist_asking", "date": "2026-10-03", "condition": "like_new", "note": "Inside Weather branded — ceiling"}
       ]
     }
   }
