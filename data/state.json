@@ -1,12 +1,14 @@
 {
-  "_about": "Engine-owned memory. Committed back after every run. Never hand-edit except full reset: paste this original skeleton to start clean.",
-  "version": 1,
-  "tg_offset": 0,
-  "last_discovery_date": null,
-  "usage": {
-    "month": null,
-    "fetched": 0
-  },
-  "seen": {},
-  "deals": {}
+ "_about": "Engine-owned memory. Committed back after every run. Never hand-edit except full reset: paste this original skeleton to start clean.",
+ "version": 1,
+ "tg_offset": 275565124,
+ "last_discovery_date": "2026-10-05",
+ "usage": {
+  "month": "2026-10",
+  "fetched": 0,
+  "warned": false,
+  "blocked": false
+ },
+ "seen": {},
+ "deals": {}
 }
