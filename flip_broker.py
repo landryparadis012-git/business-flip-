@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Flip Broker v1 — deal-sourcing engine (no-inventory broker model).
+Flip Broker v1.1 — deal-sourcing engine (no-inventory broker model).
 
 Finds underpriced Facebook Marketplace listings (via Apify), prices them
 against REAL comps from comps.json (never LLM-guessed), and sends cards to
@@ -8,6 +8,8 @@ its own Telegram bot with buttons: TAKEN / CONTACTED / POSTED.
 /won <price> and /lost close a deal. Every card + status change is emitted
 as a signed event to OpsHub, which registers deals and manages reminders.
 
+v1.1: hunt list is pulled from OpsHub (/flipwatches). watches.json is the
+fallback when the hub is unreachable or has no watches.
 You never buy: lock the seller, advertise, find the buyer, collect the fee.
 Stdlib only. Runs free on GitHub Actions.
 """
@@ -35,6 +37,7 @@ FEE_MIN, FEE_MAX = 50.0, 1500.0
 LIST_DISCOUNT = 0.05       # list just under the lowest comp to move fast
 STALE_DAYS = 30            # comps older than this are ignored
 MAX_ACTIVE = 5             # don't chase more deals than this at once
+HUB_RESULTS_CAP = 8        # per-hub-watch fetch cap per daily scan
 RISK_WORDS = ("salvage", "check engine", "no title", "cracked", "broken",
               "not working", "parts only", "for parts", "torn", "missing", "junk")
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
@@ -122,6 +125,34 @@ def save_state(s):
     os.makedirs(STATE_DIR, exist_ok=True)
     with open(STATE_PATH, "w") as f:
         json.dump(s, f, indent=1)
+
+# ---------------- hunt list: OpsHub first, file fallback ----------------
+def load_hub_watches():
+    url = os.environ.get("HUB_FETCH_URL", "").strip()
+    if not url:
+        return None
+    try:
+        resp = http_json(url, timeout=15)
+        ws = resp.get("watches", []) if isinstance(resp, dict) else []
+        out = []
+        for w in ws:
+            if not isinstance(w, dict) or not w.get("query"):
+                continue
+            try:
+                mp = float(w.get("maxPrice") or 10**9)
+            except (TypeError, ValueError):
+                mp = 10**9
+            out.append({"id": str(w.get("watchId") or "watch"),
+                        "query": str(w.get("query")),
+                        "city": str(w.get("city") or "miami"),
+                        "max_price": mp,
+                        "category": str(w.get("category") or "other"),
+                        "results_cap": HUB_RESULTS_CAP})
+        print(f"[hub] using {len(out)} hub-managed watches")
+        return out
+    except Exception as e:
+        print(f"[hub] watch fetch failed ({e}) — falling back to watches.json")
+        return None
 
 # ---------------- comps & pricing ----------------
 def load_comps(watch_id):
@@ -436,7 +467,6 @@ def discovery(state, watches):
 
 # ---------------- main ----------------
 def main():
-    watches = load_json(WATCHES_PATH, {}).get("watches", [])
     state = load_state()
     for u in tg_get_updates(state["tg_offset"]):
         state["tg_offset"] = int(u.get("update_id", state["tg_offset"])) + 1
@@ -444,6 +474,11 @@ def main():
             handle_callback(state, u["callback_query"])
         elif "message" in u:
             handle_command(state, u["message"])
+    watches = load_hub_watches()
+    if watches is None:
+        watches = load_json(WATCHES_PATH, {}).get("watches", [])
+        if watches:
+            print(f"[file] using {len(watches)} watches.json watches")
     if watches:
         discovery(state, watches)
     save_state(state)
