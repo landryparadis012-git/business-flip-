@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-"""
-Flip Broker v1.1 — deal-sourcing engine (no-inventory broker model).
+#!/usr/bin/env python3"""Flip Broker v1.1 — deal-sourcing engine (no-inventory broker model).
 
 Finds underpriced Facebook Marketplace listings (via Apify), prices them
 against REAL comps from comps.json (never LLM-guessed), and sends cards to
@@ -156,6 +154,10 @@ def load_hub_watches():
 
 # ---------------- comps & pricing ----------------
 def load_comps(watch_id):
+    """Return real comps for a watch. watch_id must match a key in comps.json
+    under comps.comps.<watch_id>.comps. If the active file watch's id does not
+    match any comp key, this returns [] and the listing will NOT be carded —
+    which is correct (no real price data = no deal claim)."""
     data = load_json(COMPS_PATH, {})
     entry = (data.get("comps") or {}).get(watch_id) or {}
     out = []
@@ -359,8 +361,9 @@ def apify_search(watch, cap):
     if not tok:
         print("[apify] no APIFY_TOKEN — discovery skipped")
         return None
-    url = ("https://www.facebook.com/marketplace/" + watch["city"] +
-           "/search?query=" + urllib.parse.quote(watch["query"]))
+    url = ("https://www.facebook.com/marketplace/"
+           + watch["city"] + "/search?query="
+           + urllib.parse.quote(watch["query"]))
     req_url = APIFY_RUN + "?token=" + urllib.parse.quote(tok) + "&timeout=480"
     try:
         items = http_json(req_url, payload={"urls": [url], "resultsLimit": int(cap)},
@@ -403,14 +406,19 @@ def process_listing(state, w, p):
     if p["price"] > float(w.get("max_price", 10**9)):
         return
     pr = price_deal(w, p["price"], p["title"])
+    if pr is None:
+        # no real comps for this watch -> can't price it, don't card
+        seen[p["id"]] = {"w": w["id"], "p": p["price"],
+                         "t": int(time.time()), "card": False, "nocomp": True}
+        return
     tag = ""
     if old:
         dropped = old["p"] > 0 and p["price"] <= old["p"] * 0.9
-        if not dropped or old.get("card") or not pr or pr["tier"] == "PASS":
+        if not dropped or old.get("card") or pr["tier"] == "PASS":
             return
         tag = "💸 PRICE DROP"
     else:
-        if not pr or pr["tier"] == "PASS":
+        if pr["tier"] == "PASS":
             seen[p["id"]] = {"w": w["id"], "p": p["price"],
                              "t": int(time.time()), "card": False}
             return
@@ -447,6 +455,7 @@ def discovery(state, watches):
         return
     print(f"[scan] discovery: {len(watches)} watches, "
           f"budget {u['fetched']}/{int(MONTHLY_CAP)}")
+    no_comp_watches = []
     for w in watches:
         if u["fetched"] >= MONTHLY_CAP:
             tg_send("🛑 Apify cap reached mid-scan — remaining watches skipped.")
@@ -463,6 +472,13 @@ def discovery(state, watches):
             u["warned"] = True
             tg_send(f"⚠️ Apify budget at {u['fetched']}/{int(MONTHLY_CAP)} (80%).")
         time.sleep(2)
+        # Track watches with no comps — they will never card, warn once
+        if w["id"] not in no_comp_watches and not load_comps(w["id"]):
+            no_comp_watches.append(w["id"])
+    if no_comp_watches:
+        print(f"[warn] {len(no_comp_watches)} watch(es) have no comps and will "
+              f"never card: {', '.join(no_comp_watches)}. Add comps.json entries "
+              f"or remove the watches.")
     state["last_discovery_date"] = today
 
 # ---------------- main ----------------
