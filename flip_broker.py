@@ -66,12 +66,18 @@ def tg(method, payload):
 def tg_send(text, buttons=None):
     chat = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not tg_token() or not chat:
+        print("[tg] not configured — card suppressed")
         return
     p = {"chat_id": chat, "text": text}
     if buttons:
         p["reply_markup"] = {"inline_keyboard": buttons}
     try:
-        tg("sendMessage", p)
+        r = tg("sendMessage", p)
+        if isinstance(r, dict) and r.get("ok"):
+            mid = (r.get("result") or {}).get("message_id")
+            print(f"[tg] card delivered message_id={mid}")
+        else:
+            print(f"[tg] send rejected: {str(r)[:200]}")
     except Exception as e:
         print("[tg] send failed:", e)
 
