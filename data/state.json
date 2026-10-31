@@ -5,10 +5,94 @@
  "last_discovery_date": "2026-10-31",
  "usage": {
   "month": "2026-10",
-  "fetched": 48,
+  "fetched": 72,
   "warned": false,
   "blocked": false
  },
- "seen": {},
- "deals": {}
+ "seen": {
+  "1416601660461163": {
+   "w": "playstation-5-miami",
+   "p": 350.0,
+   "t": 1793438561,
+   "card": true
+  },
+  "1604500027818063": {
+   "w": "playstation-5-miami",
+   "p": 320.0,
+   "t": 1793438562,
+   "card": true
+  },
+  "2934528400251188": {
+   "w": "playstation-5-miami",
+   "p": 370.0,
+   "t": 1793438562,
+   "card": true
+  },
+  "1102482595471269": {
+   "w": "playstation-5-miami",
+   "p": 430.0,
+   "t": 1793438562,
+   "card": false
+  },
+  "1685925823135033": {
+   "w": "playstation-5-miami",
+   "p": 300.0,
+   "t": 1793438562,
+   "card": true
+  },
+  "1584566599804349": {
+   "w": "playstation-5-miami",
+   "p": 120.0,
+   "t": 1793438563,
+   "card": true
+  },
+  "2203353660224459": {
+   "w": "playstation-5-miami",
+   "p": 450.0,
+   "t": 1793438563,
+   "card": false
+  }
+ },
+ "deals": {
+  "1416601660461163": {
+   "watch": "playstation-5-miami",
+   "title": "Sony PlayStation 5 Slim with 2 DualSense Controllers and Charging Dock",
+   "asking": 350.0,
+   "status": "found",
+   "opened_ts": 1793438561,
+   "updated_ts": 1793438561
+  },
+  "1604500027818063": {
+   "watch": "playstation-5-miami",
+   "title": "PS5",
+   "asking": 320.0,
+   "status": "found",
+   "opened_ts": 1793438562,
+   "updated_ts": 1793438562
+  },
+  "2934528400251188": {
+   "watch": "playstation-5-miami",
+   "title": "Playstation 5",
+   "asking": 370.0,
+   "status": "found",
+   "opened_ts": 1793438562,
+   "updated_ts": 1793438562
+  },
+  "1685925823135033": {
+   "watch": "playstation-5-miami",
+   "title": "PS5",
+   "asking": 300.0,
+   "status": "found",
+   "opened_ts": 1793438562,
+   "updated_ts": 1793438562
+  },
+  "1584566599804349": {
+   "watch": "playstation-5-miami",
+   "title": "Playstation 5 Game Bundle(8 Games)",
+   "asking": 120.0,
+   "status": "found",
+   "opened_ts": 1793438563,
+   "updated_ts": 1793438563
+  }
+ }
 }
