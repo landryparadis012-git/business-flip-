@@ -481,10 +481,21 @@ def discovery(state, watches, force=False):
         if items is None:
             continue
         u["fetched"] += len(items)
+        seen_before = len(state["seen"])
+        parsed = 0
         for it in items:
             p = parse_item(it)
             if p:
+                parsed += 1
                 process_listing(state, w, p)
+        print(f"[scan] {w['id']}: {len(items)} items, {parsed} parsed, "
+              f"{len(state['seen']) - seen_before} newly seen, "
+              f"{len(state['deals'])} deals tracked")
+        if items and parsed == 0:
+            sample = items[0]
+            keys = sorted(sample.keys()) if isinstance(sample, dict) else type(sample).__name__
+            print(f"[scan] {w['id']}: NOTHING PARSED — item keys={keys} "
+                  f"sample={str(sample)[:300]}")
         if not u["warned"] and u["fetched"] >= MONTHLY_CAP * 0.8:
             u["warned"] = True
             tg_send(f"⚠️ Apify budget at {u['fetched']}/{int(MONTHLY_CAP)} (80%).")
