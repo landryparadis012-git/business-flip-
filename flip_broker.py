@@ -455,9 +455,10 @@ def process_listing(state, w, p):
               "est_spread": pr["spread"], "city": p.get("city", ""), "url": p["url"]})
     print(f"[deal] {pr['tier']} {p['title'][:40]} asking {p['price']}")
 
-def discovery(state, watches):
+def discovery(state, watches, force=False):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    if state["last_discovery_date"] == today:
+    if state["last_discovery_date"] == today and not force:
+        print("[scan] already scanned today — skipping (set FLIP_FORCE_DISCOVERY=1 to override)")
         return
     u = state["usage"]
     if u["month"] != today[:7]:
@@ -512,7 +513,8 @@ def main():
         if watches:
             print(f"[file] using {len(watches)} watches.json watches")
     if watches:
-        discovery(state, watches)
+        force = os.environ.get("FLIP_FORCE_DISCOVERY", "").strip().lower() in ("1", "true", "yes")
+        discovery(state, watches, force)
     save_state(state)
     print(f"[done] seen={len(state['seen'])} deals={len(state['deals'])} "
           f"usage={state['usage']['fetched']}/{int(MONTHLY_CAP)}")

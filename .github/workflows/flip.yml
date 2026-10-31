@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      force_discovery:
+        description: "Ignore the once-daily discovery gate (spends Apify budget)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -34,6 +39,7 @@ jobs:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
           HUB_URL: ${{ secrets.HUB_URL }}
           HUB_FETCH_URL: ${{ secrets.HUB_FETCH_URL }}
+          FLIP_FORCE_DISCOVERY: ${{ inputs.force_discovery }}
           HUB_WEBHOOK_SECRET: ${{ secrets.HUB_WEBHOOK_SECRET }}
 
       - name: Commit memory
