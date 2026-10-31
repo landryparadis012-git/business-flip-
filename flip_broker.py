@@ -1,4 +1,5 @@
-#!/usr/bin/env python3"""Flip Broker v1.1 — deal-sourcing engine (no-inventory broker model).
+#!/usr/bin/env python3
+"""Flip Broker v1.1 — deal-sourcing engine (no-inventory broker model).
 
 Finds underpriced Facebook Marketplace listings (via Apify), prices them
 against REAL comps from comps.json (never LLM-guessed), and sends cards to
