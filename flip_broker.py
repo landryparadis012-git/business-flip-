@@ -12,7 +12,7 @@ fallback when the hub is unreachable or has no watches.
 You never buy: lock the seller, advertise, find the buyer, collect the fee.
 Stdlib only. Runs free on GitHub Actions.
 """
-import os, re, json, time, hmac, hashlib, urllib.request, urllib.parse
+import os, re, json, time, hmac, hashlib, urllib.request, urllib.error, urllib.parse
 from datetime import datetime, timezone
 
 # ---------------- paths & constants ----------------
@@ -366,12 +366,27 @@ def apify_search(watch, cap):
            + watch["city"] + "/search?query="
            + urllib.parse.quote(watch["query"]))
     req_url = APIFY_RUN + "?token=" + urllib.parse.quote(tok) + "&timeout=480"
+    # The actor's INPUT_SCHEMA requires `startUrls` (array of {url}); sending
+    # `urls` made every run return HTTP 400 and discovery silently yield 0.
     try:
-        items = http_json(req_url, payload={"urls": [url], "resultsLimit": int(cap)},
+        items = http_json(req_url,
+                          payload={"startUrls": [{"url": url}],
+                                   "resultsLimit": int(cap)},
                           timeout=540)
+    except urllib.error.HTTPError as e:
+        body = ""
+        try:
+            body = e.read().decode("utf-8", "replace")[:400]
+        except Exception:
+            pass
+        print(f"[apify] {watch['id']} run failed: HTTP {e.code} — {body}")
+        return None
     except Exception as e:
         print(f"[apify] {watch['id']} run failed: {e}")
         return None
+    if isinstance(items, dict):
+        print(f"[apify] {watch['id']} unexpected payload: {str(items)[:200]}")
+        return []
     return items if isinstance(items, list) else []
 
 def parse_item(it):
