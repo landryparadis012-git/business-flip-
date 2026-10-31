@@ -5,7 +5,7 @@
  "last_discovery_date": "2026-10-31",
  "usage": {
   "month": "2026-10",
-  "fetched": 72,
+  "fetched": 96,
   "warned": false,
   "blocked": false
  },
@@ -50,6 +50,12 @@
    "w": "playstation-5-miami",
    "p": 450.0,
    "t": 1793438563,
+   "card": false
+  },
+  "2237205497210680": {
+   "w": "xbox-series-x-miami",
+   "p": 465.0,
+   "t": 1793439024,
    "card": false
   }
  },
