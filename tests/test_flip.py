@@ -50,6 +50,28 @@ class Chain(unittest.TestCase):
         self.assertEqual(p["id"], "123")
         self.assertEqual(p["url"], "https://www.facebook.com/marketplace/item/123/")
 
+    def test_parse_item_actor_listingUrl_shape(self):
+        # Real shape returned by apify~facebook-marketplace-scraper
+        item = {"listingUrl": "https://www.facebook.com/marketplace/item/1416601660461163/?ref=search",
+                "id": "1416601660461163",
+                "listing_price": {"amount": "325.00", "currency": "USD"},
+                "marketplace_listing_title": "PlayStation 5 Slim Disc",
+                "location": {"reverse_geocode": {"city": "Miami"}},
+                "is_sold": False, "is_pending": False, "is_hidden": False}
+        p = fb.parse_item(item)
+        self.assertIsNotNone(p, "real actor item shape was rejected")
+        self.assertEqual(p["price"], 325.0)
+        self.assertEqual(p["id"], "1416601660461163")
+        self.assertEqual(p["title"], "PlayStation 5 Slim Disc")
+        self.assertEqual(p["url"], "https://www.facebook.com/marketplace/item/1416601660461163/")
+
+    def test_parse_item_skips_sold_and_pending(self):
+        base = {"listingUrl": "https://www.facebook.com/marketplace/item/9",
+                "id": "9", "listing_price": {"amount": "100"},
+                "marketplace_listing_title": "PS5"}
+        self.assertIsNone(fb.parse_item(dict(base, is_sold=True)))
+        self.assertIsNone(fb.parse_item(dict(base, is_pending=True)))
+
     def test_parse_item_rejects_missing_price(self):
         self.assertIsNone(fb.parse_item({"posting_url": "u", "title": "x"}))
 

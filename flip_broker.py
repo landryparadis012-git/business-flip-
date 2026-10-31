@@ -390,14 +390,24 @@ def apify_search(watch, cap):
     return items if isinstance(items, list) else []
 
 def parse_item(it):
-    url = it.get("posting_url") or it.get("url") or ""
+    if not isinstance(it, dict):
+        return None
+    # This actor emits listingUrl/id and marketplace_listing_title; older
+    # builds and the docs used posting_url/listing_id. Accept both, otherwise
+    # every real listing is discarded as unparseable.
+    url = (it.get("listingUrl") or it.get("posting_url")
+           or it.get("url") or "")
     if not url:
+        return None
+    if it.get("is_sold") or it.get("is_pending") or it.get("is_hidden"):
         return None
     price = it.get("listing_price")
     if isinstance(price, dict):
         price = price.get("amount", price.get("price"))
     if price is None:
         price = it.get("price")
+    if price is None:
+        price = it.get("min_listing_price") or it.get("strikethrough_price")
     if isinstance(price, str):
         m = re.search(r"[\d,]+(?:\.\d+)?", price)
         if not m:
@@ -407,10 +417,16 @@ def parse_item(it):
         price = float(price)
     except (TypeError, ValueError):
         return None
-    title = it.get("marketplace_listing_title") or it.get("title") or ""
-    did = str(it.get("listing_id") or hashlib.md5(url.encode()).hexdigest()[:16])
+    if price <= 0:
+        return None
+    title = (it.get("marketplace_listing_title") or it.get("custom_title")
+             or it.get("title") or "")
+    did = str(it.get("id") or it.get("listing_id")
+              or hashlib.md5(url.encode()).hexdigest()[:16])
     loc = it.get("location")
-    city = loc.get("city", "") if isinstance(loc, dict) else ""
+    city = ""
+    if isinstance(loc, dict):
+        city = loc.get("city") or (loc.get("reverse_geocode") or {}).get("city") or ""
     return {"id": did, "title": title or "Untitled listing", "price": price,
             "url": url.split("?")[0], "city": city}
 
