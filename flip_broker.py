@@ -36,6 +36,10 @@ FEE_MIN, FEE_MAX = 50.0, 1500.0
 LIST_DISCOUNT = 0.05       # list just under the lowest comp to move fast
 STALE_DAYS = 30            # comps older than this are ignored
 MAX_ACTIVE = 5             # don't chase more deals than this at once
+try:                        # verification knob; unset in normal operation
+    MAX_ACTIVE = int(os.environ.get("FLIP_MAX_ACTIVE", "") or MAX_ACTIVE)
+except ValueError:
+    pass
 HUB_RESULTS_CAP = 8        # per-hub-watch fetch cap per daily scan
 RISK_WORDS = ("salvage", "check engine", "no title", "cracked", "broken",
               "not working", "parts only", "for parts", "torn", "missing", "junk")
