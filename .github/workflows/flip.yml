@@ -1,6 +1,8 @@
 name: Flip Broker
 
 on:
+  pull_request:
+    branches: [main]
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
@@ -21,7 +23,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Syntax check
+        run: python3 -m py_compile flip_broker.py
+      - name: Test discovery, pricing and dedupe chain
+        run: python3 -m unittest discover -s tests -v
+
   run:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -40,6 +58,10 @@ jobs:
           FLIP_TG_TOKEN: ${{ secrets.FLIP_TG_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+          EBAY_MARKETPLACE_ID: ${{ vars.EBAY_MARKETPLACE_ID }}
+          EBAY_CURRENCY: ${{ vars.EBAY_CURRENCY }}
           HUB_URL: ${{ secrets.HUB_URL }}
           HUB_FETCH_URL: ${{ secrets.HUB_FETCH_URL }}
           FLIP_FORCE_DISCOVERY: ${{ inputs.force_discovery }}

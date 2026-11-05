@@ -12,7 +12,7 @@ fallback when the hub is unreachable or has no watches.
 You never buy: lock the seller, advertise, find the buyer, collect the fee.
 Stdlib only. Runs free on GitHub Actions.
 """
-import os, re, json, time, hmac, hashlib, urllib.request, urllib.error, urllib.parse
+import os, re, json, time, hmac, hashlib, base64, statistics, urllib.request, urllib.error, urllib.parse
 from datetime import datetime, timezone
 
 # ---------------- paths & constants ----------------
@@ -96,7 +96,11 @@ def tg_get_updates(offset):
     if not tok:
         return []
     try:
+        # Telegram confirms all updates below the supplied offset. Persisted
+        # state therefore prevents old callbacks/messages from filling the queue.
         url = TG_API.format(tok, "getUpdates") + "?timeout=0"
+        if int(offset or 0) > 0:
+            url += "&offset=" + str(int(offset))
         resp = http_json(url, headers=UA)
     except Exception as e:
         print("[tg] getUpdates failed:", e)
@@ -174,6 +178,11 @@ def load_comps(watch_id):
     out = []
     today = datetime.now(timezone.utc).date()
     for c in entry.get("comps", []):
+        # Only completed-sale evidence may drive deal scoring. Retail and
+        # marketplace asking prices remain useful research notes, not proof
+        # of realized market value.
+        if not str(c.get("source", "")).lower().endswith("_sold"):
+            continue
         try:
             price = float(c["price"])
         except (KeyError, TypeError, ValueError):
@@ -191,6 +200,26 @@ def load_comps(watch_id):
 def risk_flags(title):
     t = (title or "").lower()
     return [w for w in RISK_WORDS if w in t]
+
+def title_matches_watch(watch, title):
+    """Conservative identity check: reject obvious adjacent models/accessories."""
+    t = re.sub(r"[^a-z0-9]+", " ", (title or "").lower()).strip()
+    q = (watch.get("query") or "").lower()
+    if "playstation 5" in q or "ps5" in q:
+        return (bool(re.search(r"\b(?:ps5|playstation 5)\b", t))
+                and not re.search(r"\b(?:ps3|playstation 3|ps4|playstation 4)\b", t)
+                and not (re.search(r"\bgames?\b", t)
+                         and not re.search(r"\b(?:console|system|disc edition|digital edition)\b", t)))
+    if "xbox series x" in q:
+        return (bool(re.search(r"\bxbox series x\b", t))
+                and not re.search(r"\bxbox series s\b", t)
+                and not (re.search(r"\bgames?\b", t)
+                         and not re.search(r"\b(?:console|system)\b", t)))
+    if "macbook air m1" in q:
+        return bool(re.search(r"\bmacbook air\b", t) and re.search(r"\bm1\b", t))
+    # Generic watch: require all meaningful query terms to be present.
+    terms = [x for x in re.findall(r"[a-z0-9]+", q) if len(x) > 1]
+    return bool(terms) and all(x in t for x in terms)
 
 def price_deal(watch, asking, title):
     """REAL comps only -> honest broker math. Never guesses prices."""
@@ -216,6 +245,77 @@ def price_deal(watch, asking, title):
             "fee": round(fee, 2), "margin": round(margin, 3),
             "tier": tier, "flags": flags}
 
+# ---------------- optional eBay active-market context ----------------
+_EBAY_TOKEN = None
+_EBAY_TOKEN_EXPIRES = 0
+
+def ebay_active_asking(watch, limit=10):
+    """Return active eBay asking-price context only; never feeds sold-comp scoring.
+
+    Disabled unless both application credentials are configured. eBay Browse
+    API access is optional and its availability/rate limits are controlled by eBay.
+    """
+    global _EBAY_TOKEN, _EBAY_TOKEN_EXPIRES
+    app_id = os.environ.get("EBAY_CLIENT_ID", "").strip()
+    cert_id = os.environ.get("EBAY_CLIENT_SECRET", "").strip()
+    if not app_id or not cert_id:
+        return None
+    try:
+        now = time.time()
+        if not _EBAY_TOKEN or now >= _EBAY_TOKEN_EXPIRES - 60:
+            basic = base64.b64encode(f"{app_id}:{cert_id}".encode()).decode()
+            body = urllib.parse.urlencode({
+                "grant_type": "client_credentials",
+                "scope": "https://api.ebay.com/oauth/api_scope",
+            }).encode()
+            req = urllib.request.Request(
+                "https://api.ebay.com/identity/v1/oauth2/token",
+                data=body,
+                headers={"Authorization": "Basic " + basic,
+                         "Content-Type": "application/x-www-form-urlencoded",
+                         "Accept": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=20) as response:
+                token_data = json.loads(response.read().decode())
+            _EBAY_TOKEN = token_data["access_token"]
+            _EBAY_TOKEN_EXPIRES = now + int(token_data.get("expires_in", 7200))
+        marketplace = os.environ.get("EBAY_MARKETPLACE_ID", "EBAY_US").strip() or "EBAY_US"
+        currency = os.environ.get("EBAY_CURRENCY", "USD").strip().upper() or "USD"
+        query = urllib.parse.urlencode({"q": watch.get("query", ""), "limit": int(limit),
+                                        "filter": "buyingOptions:{FIXED_PRICE}"})
+        url = "https://api.ebay.com/buy/browse/v1/item_summary/search?" + query
+        req = urllib.request.Request(url, headers={
+            "Authorization": "Bearer " + _EBAY_TOKEN,
+            "Accept": "application/json",
+            "X-EBAY-C-MARKETPLACE-ID": marketplace,
+        })
+        with urllib.request.urlopen(req, timeout=20) as response:
+            payload = json.loads(response.read().decode())
+        prices = []
+        for item in (payload.get("itemSummaries") or []):
+            if not isinstance(item, dict) or not title_matches_watch(watch, item.get("title", "")):
+                continue
+            price = item.get("price") or {}
+            if str(price.get("currency", "")).upper() != currency:
+                continue
+            try:
+                value = float(price.get("value"))
+            except (TypeError, ValueError):
+                continue
+            if value > 0:
+                prices.append(value)
+        if not prices:
+            return None
+        prices.sort()
+        return {"count": len(prices), "min": round(prices[0], 2),
+                "median": round(statistics.median(prices), 2),
+                "currency": currency, "marketplace": marketplace,
+                "source": "eBay Browse active listings (asking only)"}
+    except Exception as e:
+        print(f"[ebay] active asking context unavailable for {watch.get('id')}: {e}")
+        return None
+
+
 # ---------------- cards ----------------
 def seller_draft(title):
     return ('Hi! Is the ' + title + ' still available? I connect sellers with '
@@ -227,8 +327,8 @@ def deal_card(watch, it, pr, tag=""):
     icon = "🔥" if pr["tier"] == "DEAL" else "🟡"
     lines = [
         f"{icon} {pr['tier']} — {it['title'][:60]} {tag}".rstrip(),
-        f"Asking ${it['price']:,.0f} | Comps low ${pr['low']:,.0f} "
-        f"({pr['n']} comps: {pr['src']})",
+        f"Asking ${it['price']:,.0f} | Sold comps low ${pr['low']:,.0f} "
+        f"({pr['n']} sold comps: {pr['src']})",
         f"MAX OFFER to seller: ${pr['max_offer']:,.0f}",
         f"Suggested list price: ${pr['est_list']:,.0f}",
         f"EST. spread ${pr['spread']:,.0f} ({pr['margin']*100:.0f}%) | "
@@ -240,6 +340,11 @@ def deal_card(watch, it, pr, tag=""):
     ]
     if pr["flags"]:
         lines.insert(1, "⚠️ Risk: " + ", ".join(pr["flags"]))
+    ebay = pr.get("ebay_active")
+    if ebay:
+        lines.insert(2, f"eBay active asking only: min ${ebay['min']:,.0f} / "
+                    f"median ${ebay['median']:,.0f} ({ebay['count']} matches; "
+                    "NOT sold comps)")
     return "\n".join(lines)
 
 def deal_buttons(did):
@@ -440,12 +545,15 @@ def parse_item(it):
     return {"id": did, "title": title or "Untitled listing", "price": price,
             "url": url.split("?")[0], "city": city}
 
-def process_listing(state, w, p):
+def process_listing(state, w, p, market_context=None):
     if p["id"] in state["deals"]:
         return  # known deal — never re-card or reset its status
     seen = state["seen"]
     old = seen.get(p["id"])
     if p["price"] > float(w.get("max_price", 10**9)):
+        return
+    if not title_matches_watch(w, p["title"]):
+        print(f"[identity] rejected listing for {w['id']}: {p['title'][:80]}")
         return
     pr = price_deal(w, p["price"], p["title"])
     if pr is None:
@@ -453,8 +561,11 @@ def process_listing(state, w, p):
         seen[p["id"]] = {"w": w["id"], "p": p["price"],
                          "t": int(time.time()), "card": False, "nocomp": True}
         return
+    if market_context:
+        pr["ebay_active"] = market_context
     tag = ""
-    if old:
+    recovered_from_missing_comps = bool(old and old.get("nocomp"))
+    if old and not recovered_from_missing_comps:
         dropped = old["p"] > 0 and p["price"] <= old["p"] * 0.9
         if not dropped or old.get("card") or pr["tier"] == "PASS":
             return
@@ -462,13 +573,16 @@ def process_listing(state, w, p):
     else:
         if pr["tier"] == "PASS":
             seen[p["id"]] = {"w": w["id"], "p": p["price"],
-                             "t": int(time.time()), "card": False}
+                             "t": int(time.time()), "card": False, "nocomp": False}
             return
         active = sum(1 for d in state["deals"].values()
                      if d["status"] not in ("won", "lost"))
         if active >= MAX_ACTIVE:
             return
-    seen[p["id"]] = {"w": w["id"], "p": p["price"], "t": int(time.time()), "card": True}
+        if recovered_from_missing_comps:
+            tag = "📊 COMPS RESTORED"
+    seen[p["id"]] = {"w": w["id"], "p": p["price"], "t": int(time.time()),
+                     "card": True, "nocomp": False}
     state["deals"][p["id"]] = {"watch": w["id"], "title": p["title"],
                                "asking": p["price"], "status": "found",
                                "opened_ts": int(time.time()),
@@ -499,13 +613,22 @@ def discovery(state, watches, force=False):
     print(f"[scan] discovery: {len(watches)} watches, "
           f"budget {u['fetched']}/{int(MONTHLY_CAP)}")
     no_comp_watches = []
+    successful_scans = 0
     for w in watches:
-        if u["fetched"] >= MONTHLY_CAP:
+        remaining = int(MONTHLY_CAP - u["fetched"])
+        if remaining <= 0:
             tg_send("🛑 Apify cap reached mid-scan — remaining watches skipped.")
             break
-        items = apify_search(w, w.get("results_cap", 8))
+        requested = max(0, min(int(w.get("results_cap", HUB_RESULTS_CAP)), remaining))
+        if requested <= 0:
+            break
+        items = apify_search(w, requested)
         if items is None:
             continue
+        successful_scans += 1
+        # One optional eBay Browse request per watch scan. Active asking prices
+        # are display-only and cannot affect price_deal(), which uses sold comps.
+        market_context = ebay_active_asking(w)
         u["fetched"] += len(items)
         seen_before = len(state["seen"])
         parsed = 0
@@ -513,7 +636,7 @@ def discovery(state, watches, force=False):
             p = parse_item(it)
             if p:
                 parsed += 1
-                process_listing(state, w, p)
+                process_listing(state, w, p, market_context=market_context)
         print(f"[scan] {w['id']}: {len(items)} items, {parsed} parsed, "
               f"{len(state['seen']) - seen_before} newly seen, "
               f"{len(state['deals'])} deals tracked")
@@ -533,7 +656,10 @@ def discovery(state, watches, force=False):
         print(f"[warn] {len(no_comp_watches)} watch(es) have no comps and will "
               f"never card: {', '.join(no_comp_watches)}. Add comps.json entries "
               f"or remove the watches.")
-    state["last_discovery_date"] = today
+    if successful_scans:
+        state["last_discovery_date"] = today
+    else:
+        print("[scan] no watch completed successfully; daily gate remains open for retry")
 
 # ---------------- main ----------------
 def main():
